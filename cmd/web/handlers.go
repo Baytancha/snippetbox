@@ -9,7 +9,7 @@ import (
 )
 
 func home(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/" {
+	if r.URL.Path != "/" { //restricting the wildcard pattern
 		http.NotFound(w, r)
 		return
 	}
@@ -19,6 +19,7 @@ func home(w http.ResponseWriter, r *http.Request) {
 	files := []string{
 		"C:\\Users\\mk\\snippetbox\\ui\\html\\home.page.tmpl",
 		"C:\\Users\\mk\\snippetbox\\ui\\html\\base.layout.tmpl",
+		"C:\\Users\\mk\\snippetbox\\ui\\html\\footer.partial.tmpl",
 	}
 
 	// Use the template.ParseFiles() function to read the files and store the

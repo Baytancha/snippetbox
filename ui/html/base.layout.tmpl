@@ -15,6 +15,14 @@
 <section>
 {{template "body" .}}
 </section>
+<!-- Invoke the footer template -->
+{{template "footer" .}}
+{{block "sidebar" .}}
+<p>My Default sidebar content</p>
+{{end}}
+
+
+
 </body>
 </html>
 {{end}}
