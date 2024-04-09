@@ -1,10 +1,13 @@
 package main
 
 import (
+	"database/sql"
 	"flag"
 	"log"
 	"net/http"
 	"os"
+
+	_ "github.com/go-sql-driver/mysql"
 )
 
 // Define an application struct to hold the application-wide dependencies for the
@@ -19,6 +22,17 @@ func downloadHandler(w http.ResponseWriter, r *http.Request) {
 	http.ServeFile(w, r, "./ui/static/file.zip")
 }
 
+func openDB(dsn string) (*sql.DB, error) {
+	db, err := sql.Open("mysql", dsn)
+	if err != nil {
+		return nil, err
+	}
+	if err = db.Ping(); err != nil {
+		return nil, err
+	}
+	return db, nil
+}
+
 func main() {
 
 	// Define a new command-line flag with the name 'addr', a default value of ":4000"
@@ -27,6 +41,9 @@ func main() {
 
 	// Another great feature is that you can use the -help flag to list all the available
 	// command-line flags for an application and their accompanying help text. Give it a try:
+
+	// Define a new command-line flag for the MySQL DSN string.
+	dsn := flag.String("dsn", "web:pass@/snippetbox?parseTime=true", "MySQL data source name")
 
 	addr := flag.String("addr", "127.0.0.1:4000", "HTTP network address")
 
@@ -37,34 +54,24 @@ func main() {
 	// encountered during parsing the application will be terminated.
 	flag.Parse()
 
-	// 	In staging or production environments, you can redirect the
-	// streams to a final destination for viewing and archival.
-	// This destination could be on-disk files, or a logging
-	// service such as Splunk. Either way, the final destination
-	// of the logs can be managed by your execution environment
-	// independently of the application.
-
-	// For example, we could redirect the stdout and stderr
-	// streams to on-disk files when starting the application
-	// like so:
-	//go run ./cmd/web >>/tmp/info.log 2>>/tmp/error.log
-
-	// Use log.New() to create a logger for writing information messages. This takes
-	// three parameters: the destination to write the logs to (os.Stdout), a string
-	// prefix for message (INFO followed by a tab), and flags to indicate what
-	// additional information to include (local date and time). Note that the flags
-	// are joined using the bitwise OR operator |.
-
-	//Custom loggers created by log.New() are concurrency-safe. You can share a single logger
-	// and use it across multiple goroutines and in your handlers without needing to worry about race conditions.
-	// That said, if you have multiple loggers writing to the same destination then you need to
-	// be careful and ensure that the destination’s underlying Write() method is also safe for concurrent use.
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 
 	// Create a logger for writing error messages in the same way, but use stderr as
 	// the destination and use the log.Lshortfile flag to include the relevant
 	// file name and line number.
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
+
+	// To keep the main() function tidy I've put the code for creating a connection
+	// pool into the separate openDB() function below. We pass openDB() the DSN
+	// from the command-line flag.
+	db, err := openDB(*dsn)
+	if err != nil {
+		errorLog.Fatal(err)
+	}
+
+	// We also defer a call to db.Close(), so that the connection pool is closed
+	// before the main() function exits.
+	defer db.Close()
 
 	//handlefunc requires a function wrapped in handler adaptor, but handle requires a handler object
 
@@ -75,29 +82,6 @@ func main() {
 		infoLog:  infoLog,
 	}
 
-	//mux := http.NewServeMux() //declaring a local servemux
-	//mux.HandleFunc("/", app.home)
-	//mux.HandleFunc("/snippet", app.showSnippet)
-	//mux.HandleFunc("/snippet/create", app.createSnippet)
-
-	// Create a file server which serves files out of the "./ui/static" directory.
-	// Note that the path given to the http.Dir function is relative to the project
-	// directory root.
-
-	//fileServer := http.FileServer(http.Dir("C:\\Users\\mk\\snippetbox\\ui\\static"))
-
-	// https://stackoverflow.com/questions/27945310/why-do-i-need-to-use-http-stripprefix-to-access-my-static-files
-	// mux передает путь в fileserver. Не просто сопопставляет, а передает
-	//Поэтому путь должен быть такой чтобы его понял fileserver, у нас нет второй папки static
-	//поэтому удаляем ее из пути и получаем корректный путь к файлу.
-	// /static/text.txt -> /text.txt (убираем только /static, второй слэш оставляем!!)
-	//mux.Handle("/static/", http.StripPrefix("/static", fileServer))
-	//fileserver sanitizes all request paths by running them through the path.Clean() function before searching for a file
-
-	// Initialize a new http.Server struct. We set the Addr and Handler fields so
-	// that the server uses the same network address and routes as before, and set
-	// the ErrorLog field so that the server now uses the custom errorLog logger in
-	// the event of any problems.
 	srv := &http.Server{
 		Addr:     *addr,
 		ErrorLog: errorLog,
@@ -107,7 +91,7 @@ func main() {
 
 	infoLog.Printf("Starting server on %s", *addr)
 	// Call the ListenAndServe() method on our new http.Server struct.
-	err := srv.ListenAndServe()
+	err = srv.ListenAndServe()
 	errorLog.Fatal(err)
 
 	// Write messages using the two new loggers, instead of the standard logger.
