@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 
+	//we need the driver’s init() function to run so that it can register itself with the database/sql package.
 	_ "github.com/go-sql-driver/mysql"
 )
 
