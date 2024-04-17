@@ -1,9 +1,10 @@
 package main
 
 import (
+	"fmt"           // New import
 	"html/template" // New import
 	"path/filepath" // New import
-	"time"          // New import
+	"time"
 
 	"github.com/Baytancha/snip56/internal/models"
 )
@@ -16,7 +17,8 @@ type templateData struct {
 	Snippet     *models.Snippet   //сниппет это связная совокупность данных таблицы
 	Snippets    []*models.Snippet //для того чтобы отображать последние n сниппетов
 	CurrentYear int
-}
+	Form        any //We’ll use this Form field to pass the validation errors and previously submitted data back to the template when we re-display the form.
+} //Form holds user form data
 
 // Create a humanDate function which returns a nicely formatted string
 // representation of a time.Time object.
@@ -52,6 +54,7 @@ func newTemplateCache() (map[string]*template.Template, error) {
 		// Extract the file name (like 'home.tmpl') from the full filepath
 		// and assign it to the name variable.
 		name := filepath.Base(page)
+		fmt.Println(name)
 
 		// Parse the base template file into a template set.
 		ts, err := template.New(name).Funcs(functions).ParseFiles("C:\\Users\\mk\\snippetbox\\ui\\html\\base.layout.tmpl")
