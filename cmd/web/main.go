@@ -105,6 +105,7 @@ func main() {
 		Addr:     *addr,
 		ErrorLog: errorLog,
 		// Call the new app.routes() method to get the servemux containing our routes.
+		//Handler is basically a wrapper around a function awaiting new input at every connectiob
 		Handler: app.routes(),
 	}
 

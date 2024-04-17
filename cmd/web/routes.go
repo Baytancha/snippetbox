@@ -3,7 +3,9 @@ package main
 import "net/http"
 
 // The routes() method returns a servemux containing our application routes.
-func (app *application) routes() *http.ServeMux {
+// Update the signature for the routes() method so that it returns a
+// http.Handler instead of *http.ServeMux.
+func (app *application) routes() http.Handler {
 	mux := http.NewServeMux()
 	//путь
 	fileServer := http.FileServer(http.Dir("C:\\Users\\mk\\snippetbox\\ui\\static"))
@@ -13,5 +15,8 @@ func (app *application) routes() *http.ServeMux {
 	mux.HandleFunc("/snippet/view", app.showSnippet)
 	mux.HandleFunc("/snippet/create", app.createSnippet)
 
-	return mux
+	// Wrap the existing chain with the logRequest middleware.
+	return app.recoverPanic(app.logRequest(secureHeaders(mux)))
+	//return app.logRequest(secureHeaders(mux))
+	//return secureHeaders(mux)
 }

@@ -3,8 +3,8 @@ package main
 import (
 	"errors"
 	"fmt"
-	"html/template" // New import
 
+	//"html/template" // New import
 	// New import
 	"net/http"
 	"strconv"
@@ -19,11 +19,27 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	//panic("oops! something went wrong") // Deliberate panic
+
 	snippets, err := app.snippets.Latest()
 	if err != nil {
 		app.serverError(w, err)
 		return
 	}
+
+	// Use the new render helper.
+
+	// data := &templateData{
+	// 	Snippets: snippets,
+	// }
+
+	// Call the newTemplateData() helper to get a templateData struct containing
+	// the 'default' data (which for now is just the current year), and add the
+	// snippets slice to it.
+	data := app.newTemplateData(r)
+	data.Snippets = snippets
+
+	app.render(w, http.StatusOK, "home.page.tmpl", data)
 
 	// for _, snippet := range snippets {
 	// 	fmt.Fprintf(w, "%+v\n", snippet)
@@ -34,38 +50,38 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 
 	//когда используем Execute(), нужно пользоваться вложенными шаблонами
 	//(home реализует шаблон base который реализует шаблоны из home)
-	files := []string{
-		"C:\\Users\\mk\\snippetbox\\ui\\html\\home.page.tmpl",
-		"C:\\Users\\mk\\snippetbox\\ui\\html\\base.layout.tmpl",
-		"C:\\Users\\mk\\snippetbox\\ui\\html\\footer.partial.tmpl",
-	}
+	// files := []string{
+	// 	"C:\\Users\\mk\\snippetbox\\ui\\html\\home.page.tmpl",
+	// 	"C:\\Users\\mk\\snippetbox\\ui\\html\\base.layout.tmpl",
+	// 	"C:\\Users\\mk\\snippetbox\\ui\\html\\footer.partial.tmpl",
+	// }
 
 	// Use the template.ParseFiles() function to read the files and store the
 	// templates in a template set. Notice that we can pass the slice of file p
 	// as a variadic parameter?
-	ts, err := template.ParseFiles(files...)
-	if err != nil {
-		// Because the home handler function is now a method against application
-		// it can access its fields, including the error logger. We'll write the log
-		// message to this instead of the standard logger.
-		app.serverError(w, err) // Use the serverError() helper.
-		//app.errorLog.Println(err.Error())
-		//log.Println(err.Error())
-		//http.Error(w, "Internal Server Error", 500)
-		return
-	}
+	// ts, err := template.ParseFiles(files...)
+	// if err != nil {
+	// 	// Because the home handler function is now a method against application
+	// 	// it can access its fields, including the error logger. We'll write the log
+	// 	// message to this instead of the standard logger.
+	// 	app.serverError(w, err) // Use the serverError() helper.
+	// 	//app.errorLog.Println(err.Error())
+	// 	//log.Println(err.Error())
+	// 	//http.Error(w, "Internal Server Error", 500)
+	// 	return
+	// }
 
 	// Create an instance of a templateData struct holding the slice of
 	// snippets.
-	data := &templateData{
-		Snippets: snippets,
-	}
+	// data := &templateData{
+	// 	Snippets: snippets,
+	// }
 
-	// Pass in the templateData struct when executing the template.
-	err = ts.ExecuteTemplate(w, "base", data)
-	if err != nil {
-		app.serverError(w, err)
-	}
+	// // Pass in the templateData struct when executing the template.
+	// err = ts.ExecuteTemplate(w, "base", data)
+	// if err != nil {
+	// 	app.serverError(w, err)
+	// }
 
 	// Use the template.ParseFiles() function to read the template file into a
 	// template set. If there's an error, we log the detailed error message and
@@ -117,34 +133,39 @@ func (app *application) showSnippet(w http.ResponseWriter, r *http.Request) {
 
 	// Initialize a slice containing the paths to the view.tmpl file,
 	// plus the base layout and navigation partial that we made earlier.
-	files := []string{
-		//"C:\\Users\\mk\\snippetbox\\ui\\html\\view.templ.tmpl", //template instantiation file must be first
-		//"C:\\Users\\mk\\snippetbox\\ui\\html\\home.page.tmpl",
-		//"C:\\Users\\mk\\snippetbox\\ui\\html\\view.tmpl",
-		"C:\\Users\\mk\\snippetbox\\ui\\html\\base.layout.tmpl",
-		"C:\\Users\\mk\\snippetbox\\ui\\html\\footer.partial.tmpl",
-		"C:\\Users\\mk\\snippetbox\\ui\\html\\view.tmpl", //works with view.templ too
-		"C:\\Users\\mk\\snippetbox\\ui\\html\\nav.tmpl",
-	}
+	// files := []string{
+	// 	//"C:\\Users\\mk\\snippetbox\\ui\\html\\view.templ.tmpl", //template instantiation file must be first
+	// 	//"C:\\Users\\mk\\snippetbox\\ui\\html\\home.page.tmpl",
+	// 	//"C:\\Users\\mk\\snippetbox\\ui\\html\\view.tmpl",
+	// 	"C:\\Users\\mk\\snippetbox\\ui\\html\\base.layout.tmpl",
+	// 	"C:\\Users\\mk\\snippetbox\\ui\\html\\footer.partial.tmpl",
+	// 	"C:\\Users\\mk\\snippetbox\\ui\\html\\view.tmpl", //works with view.templ too
+	// 	"C:\\Users\\mk\\snippetbox\\ui\\html\\nav.tmpl",
+	// }
 
 	// Parse the template files...
-	ts, err := template.ParseFiles(files...)
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
+	// ts, err := template.ParseFiles(files...)
+	// if err != nil {
+	// 	app.serverError(w, err)
+	// 	return
+	// }
 
 	// Create an instance of a templateData struct holding the snippet data.
-	data := &templateData{
-		Snippet: snippet,
-	}
+	// data := &templateData{
+	// 	Snippet: snippet,
+	// }
+
+	// And do the same thing again here...
+	data := app.newTemplateData(r)
+	data.Snippet = snippet
+	app.render(w, http.StatusOK, "view.tmpl", data)
 
 	//при использовании ExecuteTemplate не нужно собирать вложенные шаблоны и соблюдать порядок вызова шаблонов
 
-	err = ts.ExecuteTemplate(w, "base", data)
-	if err != nil {
-		app.serverError(w, err)
-	}
+	// err = ts.ExecuteTemplate(w, "base", data)
+	// if err != nil {
+	// 	app.serverError(w, err)
+	// }
 
 	// Write the snippet data as a plain-text HTTP response body.
 	//fmt.Fprintf(w, "%+v", snippet)
