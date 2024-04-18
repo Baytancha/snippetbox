@@ -17,6 +17,8 @@ import (
 	// "{your-module-path}/internal/models". If you can't remember what module path you
 	// used, you can find it at the top of the go.mod file.
 	"github.com/Baytancha/snip56/internal/models"
+
+	"github.com/go-playground/form/v4" // New import
 )
 
 // Define an application struct to hold the application-wide dependencies for the
@@ -27,6 +29,7 @@ type application struct {
 	infoLog       *log.Logger
 	snippets      *models.SnippetModel
 	templateCache map[string]*template.Template
+	formDecoder   *form.Decoder
 }
 
 func downloadHandler(w http.ResponseWriter, r *http.Request) {
@@ -84,6 +87,9 @@ func main() {
 	// before the main() function exits.
 	defer db.Close()
 
+	// Initialize a decoder instance...
+	formDecoder := form.NewDecoder()
+
 	// Initialize a new template cache...
 	templateCache, err := newTemplateCache()
 	if err != nil {
@@ -99,6 +105,7 @@ func main() {
 		infoLog:       infoLog,
 		snippets:      &models.SnippetModel{DB: db},
 		templateCache: templateCache,
+		formDecoder:   formDecoder,
 	}
 
 	srv := &http.Server{

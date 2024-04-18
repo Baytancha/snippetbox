@@ -8,10 +8,12 @@ import (
 	// New import
 	"net/http"
 	"strconv"
-	"strings"      // New import
-	"unicode/utf8" // New import
+
+	//"strings"      // New import
+	//"unicode/utf8" // New import
 
 	"github.com/Baytancha/snip56/internal/models"
+	"github.com/Baytancha/snip56/internal/validator"
 	"github.com/julienschmidt/httprouter" // New import
 )
 
@@ -21,10 +23,11 @@ import (
 // must be exported in order to be read by the html/template package when
 // rendering the template.
 type snippetCreateForm struct {
-	Title       string
-	Content     string
-	Expires     int
-	FieldErrors map[string]string
+	Title   string
+	Content string
+	Expires int
+	validator.Validator
+	//FieldErrors map[string]string
 }
 
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
@@ -271,38 +274,50 @@ func (app *application) createSnippetPost(w http.ResponseWriter, r *http.Request
 	// Create an instance of the snippetCreateForm struct containing the values
 	// from the form and an empty map for any validation errors.
 	form := snippetCreateForm{
-		Title:       r.PostForm.Get("title"),
-		Content:     r.PostForm.Get("content"),
-		Expires:     expires,
-		FieldErrors: map[string]string{},
+		Title:   r.PostForm.Get("title"),
+		Content: r.PostForm.Get("content"),
+		Expires: expires,
+		//FieldErrors: map[string]string{},
 	}
 
 	// Update the validation checks so that they operate on the snippetCreateForm
 	// instance.
-	if strings.TrimSpace(form.Title) == "" {
-		form.FieldErrors["title"] = "This field cannot be blank"
-	} else if utf8.RuneCountInString(form.Title) > 100 {
-		form.FieldErrors["title"] = "This field cannot be more than 100 characters long"
-	}
+	form.CheckField(validator.NotBlank(form.Title), "title", "This field cannot be blank")
+	form.CheckField(validator.MaxChars(form.Title, 100), "title", "This field cannot be more than 100 characters long")
+	form.CheckField(validator.NotBlank(form.Content), "content", "This field cannot be blank")
+	form.CheckField(validator.PermittedInt(form.Expires, 1, 7, 365), "expires", "This field must equal 1, 7 or 365")
 
-	if strings.TrimSpace(form.Content) == "" {
-		form.FieldErrors["content"] = "This field cannot be blank"
-	}
+	// if strings.TrimSpace(form.Title) == "" {
+	// 	form.FieldErrors["title"] = "This field cannot be blank"
+	// } else if utf8.RuneCountInString(form.Title) > 100 {
+	// 	form.FieldErrors["title"] = "This field cannot be more than 100 characters long"
+	// }
 
-	if form.Expires != 1 && form.Expires != 7 && form.Expires != 365 {
-		form.FieldErrors["expires"] = "This field must equal 1, 7 or 365"
+	// if strings.TrimSpace(form.Content) == "" {
+	// 	form.FieldErrors["content"] = "This field cannot be blank"
+	// }
+
+	// if form.Expires != 1 && form.Expires != 7 && form.Expires != 365 {
+	// 	form.FieldErrors["expires"] = "This field must equal 1, 7 or 365"
+	// }
+
+	if !form.Valid() {
+		data := app.newTemplateData(r)
+		data.Form = form
+		app.render(w, http.StatusUnprocessableEntity, "redisplay.tmpl", data)
+		return
 	}
 
 	// If there are any validation errors re-display the create.tmpl template,
 	// passing in the snippetCreateForm instance as dynamic data in the Form
 	// field. Note that we use the HTTP status code 422 Unprocessable Entity
 	// when sending the response to indicate that there was a validation error.
-	if len(form.FieldErrors) > 0 {
-		data := app.newTemplateData(r)
-		data.Form = form
-		app.render(w, http.StatusUnprocessableEntity, "redisplay.tmpl", data)
-		return
-	}
+	// if len(form.FieldErrors) > 0 {
+	// 	data := app.newTemplateData(r)
+	// 	data.Form = form
+	// 	app.render(w, http.StatusUnprocessableEntity, "redisplay.tmpl", data)
+	// 	return
+	// }
 
 	//ttitle := "O snail"
 	//ccontent := "O snail\nClimb Mount Fuji,\nBut slowly, slowly!\n\n– Kobayashi Issa"
