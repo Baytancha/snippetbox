@@ -22,12 +22,17 @@ import (
 // exported (i.e. start with a capital letter). This is because struct fields
 // must be exported in order to be read by the html/template package when
 // rendering the template.
+
+// Update our snippetCreateForm struct to include struct tags which tell the
+// decoder how to map HTML form values into the different struct fields. So, for
+// example, here we're telling the decoder to store the value from the HTML form
+// input with the name "title" in the Title field. The struct tag `form:"-"`
+// tells the decoder to completely ignore a field during decoding.
 type snippetCreateForm struct {
-	Title   string
-	Content string
-	Expires int
-	validator.Validator
-	//FieldErrors map[string]string
+	Title               string `form:"title"`
+	Content             string `form:"content"`
+	Expires             int    `form:"expires"`
+	validator.Validator `form:"-"`
 }
 
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
@@ -192,9 +197,17 @@ func (app *application) showSnippet(w http.ResponseWriter, r *http.Request) {
 	// 	Snippet: snippet,
 	// }
 
+	// Use the PopString() method to retrieve the value for the "flash" key.
+	// PopString() also deletes the key and value from the session data, so it
+	// acts like a one-time fetch. If there is no matching key in the session
+	// data this will return the empty string.
+	//flash := app.sessionManager.PopString(r.Context(), "flash")
+
 	// And do the same thing again here...
 	data := app.newTemplateData(r)
 	data.Snippet = snippet
+	// Pass the flash message to the template.
+
 	app.render(w, http.StatusOK, "view.tmpl", data)
 
 	//при использовании ExecuteTemplate не нужно собирать вложенные шаблоны и соблюдать порядок вызова шаблонов
@@ -249,11 +262,11 @@ func (app *application) createSnippetPost(w http.ResponseWriter, r *http.Request
 	// to the r.PostForm map. This also works in the same way for PUT and PATCH
 	// requests. If there are any errors, we use our app.ClientError() helper to
 	// send a 400 Bad Request response to the user.
-	err := r.ParseForm()
-	if err != nil {
-		app.clientError(w, http.StatusBadRequest)
-		return
-	}
+	// err := r.ParseForm()
+	// if err != nil {
+	// 	app.clientError(w, http.StatusBadRequest)
+	// 	return
+	// }
 
 	// Use the r.PostForm.Get() method to retrieve the title and content
 	// from the r.PostForm map.
@@ -265,20 +278,49 @@ func (app *application) createSnippetPost(w http.ResponseWriter, r *http.Request
 	// represent it in our Go code as an integer. So we need to manually covert
 	// the form data to an integer using strconv.Atoi(), and we send a 400 Bad
 	// Request response if the conversion fails.
-	expires, err := strconv.Atoi(r.PostForm.Get("expires"))
+
+	// Declare a new empty instance of the snippetCreateForm struct.
+	var form snippetCreateForm
+
+	err := app.decodePostForm(r, &form)
 	if err != nil {
 		app.clientError(w, http.StatusBadRequest)
 		return
 	}
 
-	// Create an instance of the snippetCreateForm struct containing the values
-	// from the form and an empty map for any validation errors.
-	form := snippetCreateForm{
-		Title:   r.PostForm.Get("title"),
-		Content: r.PostForm.Get("content"),
-		Expires: expires,
-		//FieldErrors: map[string]string{},
-	}
+	// Call the Decode() method of the form decoder, passing in the current
+	// request and *a pointer* to our snippetCreateForm struct. This will
+	// essentially fill our struct with the relevant values from the HTML form.
+	// If there is a problem, we return a 400 Bad Request response to the client.
+
+	//Hopefully you can see the benefit of this pattern. We can use simple struct tags to define
+	//a mapping between our HTML form and the ‘destination’ data fields, and unpacking the form
+	//data to the destination now only requires us to write a few lines of code — irrespective
+	//of how large the form is.
+
+	//Importantly, type conversions are handled automatically too. We can see that in the code above,
+	//where the expires value is automatically mapped to an int data type.
+
+	// err = app.formDecoder.Decode(&form, r.PostForm)
+	// if err != nil {
+	// 	app.clientError(w, http.StatusBadRequest)
+	// 	return
+	// }
+
+	// expires, err := strconv.Atoi(r.PostForm.Get("expires"))
+	// if err != nil {
+	// 	app.clientError(w, http.StatusBadRequest)
+	// 	return
+	// }
+
+	// // Create an instance of the snippetCreateForm struct containing the values
+	// // from the form and an empty map for any validation errors.
+	// form := snippetCreateForm{
+	// 	Title:   r.PostForm.Get("title"),
+	// 	Content: r.PostForm.Get("content"),
+	// 	Expires: expires,
+	// 	//FieldErrors: map[string]string{},
+	// }
 
 	// Update the validation checks so that they operate on the snippetCreateForm
 	// instance.
@@ -335,7 +377,7 @@ func (app *application) createSnippetPost(w http.ResponseWriter, r *http.Request
 	// Redirect the user to the relevant page for the snippet.
 	//Using Sprintf for fast dirty concatenations
 	//http.Redirect(w, r, fmt.Sprintf("/snippet/view?id=%d", id), http.StatusSeeOther)
-
+	app.sessionManager.Put(r.Context(), "flash", "Snippet successfully created!")
 	// Update the redirect path to use the new clean URL format.
 	http.Redirect(w, r, fmt.Sprintf("/snippet/view/%d", id), http.StatusSeeOther)
 

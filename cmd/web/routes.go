@@ -12,7 +12,7 @@ import (
 func (app *application) routes() http.Handler {
 	//mux := http.NewServeMux()
 	router := httprouter.New()
-	//путь
+	//путь по которому идем в HTML файле
 	fileServer := http.FileServer(http.Dir("C:\\Users\\mk\\snippetbox\\ui\\static"))
 	router.Handler(http.MethodGet, "/static/*filepath", http.StripPrefix("/static", fileServer))
 
@@ -20,18 +20,26 @@ func (app *application) routes() http.Handler {
 	//обработка метода уже осуществляется на уровне хэндлеров
 	//mux.Handle("/static/", http.StripPrefix("/static", fileServer))
 
+	// Create a new middleware chain containing the middleware specific to our
+	// dynamic application routes. For now, this chain will only contain the
+	// LoadAndSave session middleware but we'll add more to it later.
+	//dynamic := alice.New(app.sessionManager.LoadAndSave)
+
 	// And then create the routes using the appropriate methods, patterns and
 	// handlers.
-
+	router.Handler(http.MethodGet, "/", app.sessionManager.LoadAndSave(http.HandlerFunc(app.home)))
+	router.Handler(http.MethodGet, "/snippet/view/:id", app.sessionManager.LoadAndSave(http.HandlerFunc(app.showSnippet)))
+	router.Handler(http.MethodGet, "/snippet/create", app.sessionManager.LoadAndSave(http.HandlerFunc(app.createSnippet)))
+	router.Handler(http.MethodPost, "/snippet/create", app.sessionManager.LoadAndSave(http.HandlerFunc(app.createSnippetPost)))
 	//мы попадем на хэндер только если у нас правильный метод
-	router.HandlerFunc(http.MethodGet, "/", app.home)
-	router.HandlerFunc(http.MethodGet, "/snippet/view/:id", app.showSnippet)
+	//router.HandlerFunc(http.MethodGet, "/", app.home)
+	//router.HandlerFunc(http.MethodGet, "/snippet/view/:id", app.showSnippet)
 	//It’s important to be aware that httprouter doesn’t allow conflicting route patterns which potentially
 	//match the same request. So, for example, you cannot register a route like GET /foo/new and another
 	//route with a named parameter segment or catch-all parameter that conflicts with it —
 	//like GET /foo/:name or GET /foo/*name.
-	router.HandlerFunc(http.MethodGet, "/snippet/create", app.createSnippet)
-	router.HandlerFunc(http.MethodPost, "/snippet/create", app.createSnippetPost)
+	//router.HandlerFunc(http.MethodGet, "/snippet/create", app.createSnippet)
+	//router.HandlerFunc(http.MethodPost, "/snippet/create", app.createSnippetPost)
 
 	// Create a handler function which wraps our notFound() helper, and then
 	// assign it as the custom handler for 404 Not Found responses. You can also

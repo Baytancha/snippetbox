@@ -17,7 +17,9 @@ type templateData struct {
 	Snippet     *models.Snippet   //сниппет это связная совокупность данных таблицы
 	Snippets    []*models.Snippet //для того чтобы отображать последние n сниппетов
 	CurrentYear int
-	Form        any //We’ll use this Form field to pass the validation errors and previously submitted data back to the template when we re-display the form.
+	Form        any
+	Flash       string
+	//We’ll use this Form field to pass the validation errors and previously submitted data back to the template when we re-display the form.
 } //Form holds user form data
 
 // Create a humanDate function which returns a nicely formatted string

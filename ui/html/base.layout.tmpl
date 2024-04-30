@@ -16,6 +16,10 @@
 </header>
 {{template "nav" .}}
 <section>
+ <!-- Display the flash message if one exists -->
+            {{with .Flash}}
+                <div class='flash'>{{.}}</div>
+            {{end}}
 {{template "body" .}}
 </section>
 <!-- Invoke the footer template -->
