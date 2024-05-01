@@ -1,12 +1,17 @@
 package main
 
 import (
+	"crypto/tls" // New import
 	"database/sql"
 	"flag"
+
+	//"fmt"
 	"html/template" // New import
 	"log"
 	"net/http"
 	"os"
+
+	//"runtime/debug"
 	"time"
 
 	//we need the driver’s init() function to run so that it can register itself with the database/sql package.
@@ -31,6 +36,7 @@ type application struct {
 	errorLog       *log.Logger
 	infoLog        *log.Logger
 	snippets       *models.SnippetModel
+	users          *models.UserModel
 	templateCache  map[string]*template.Template
 	formDecoder    *form.Decoder
 	sessionManager *scs.SessionManager
@@ -107,6 +113,11 @@ func main() {
 	sessionManager := scs.New()
 	sessionManager.Store = mysqlstore.New(db)
 	sessionManager.Lifetime = 12 * time.Hour
+	// Make sure that the Secure attribute is set on our session cookies.
+	// Setting this means that the cookie will only be sent by a user's web
+	// browser when a HTTPS connection is being used (and won't be sent over an
+	// unsecure HTTP connection).
+	sessionManager.Cookie.Secure = true
 
 	//handlefunc requires a function wrapped in handler adaptor, but handle requires a handler object
 
@@ -116,9 +127,17 @@ func main() {
 		errorLog:       errorLog, //not global vars but accessible via method interfsacing
 		infoLog:        infoLog,
 		snippets:       &models.SnippetModel{DB: db},
+		users:          &models.UserModel{DB: db},
 		templateCache:  templateCache,
 		formDecoder:    formDecoder,
 		sessionManager: sessionManager,
+	}
+	// Initialize a tls.Config struct to hold the non-default TLS settings we
+	// want the server to use. In this case the only thing that we're changing
+	// is the curve preferences value, so that only elliptic curves with
+	// assembly implementations are used.
+	tlsConfig := &tls.Config{
+		CurvePreferences: []tls.CurveID{tls.X25519, tls.CurveP256},
 	}
 
 	srv := &http.Server{
@@ -126,13 +145,29 @@ func main() {
 		ErrorLog: errorLog,
 		// Call the new app.routes() method to get the servemux containing our routes.
 		//Handler is basically a wrapper around a function awaiting new input at every connectiob
-		Handler: app.routes(),
+		Handler:      app.routes(),
+		TLSConfig:    tlsConfig,
+		IdleTimeout:  time.Minute,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 10 * time.Second,
 	}
+	//For HTTP connections, if some data is written to the connection more than 10 seconds after the
+	//read of the request header finished, Go will close the underlying connection instead of writing the data.
+
+	//For HTTPS connections, if some data is written to the connection more than 10 seconds after the request
+	//is first accepted, Go will close the underlying connection instead of writing the data.
+	//This means that if you’re using HTTPS (like we are) it’s sensible to set WriteTimeout
+	//to a value greater than ReadTimeout.
 
 	infoLog.Printf("Starting server on %s", *addr)
 	// Call the ListenAndServe() method on our new http.Server struct.
-	err = srv.ListenAndServe()
+	err = srv.ListenAndServeTLS("C:\\Users\\mk\\snippetbox\\tls\\cert.pem", "C:\\Users\\mk\\snippetbox\\tls\\key.pem")
+
+	//trace := fmt.Sprintf("%s\n%s", err.Error(), debug.Stack())
+	//app.errorLog.Println(trace)
+	//app.errorLog.Output(2, trace)
 	errorLog.Fatal(err)
+	//"C:\\Users\\mk\\snipptbox\\tls\\cert.pem", "C:\\Users\\mk\\snippetbox\\tls\\key.pem"
 
 	// Write messages using the two new loggers, instead of the standard logger.
 

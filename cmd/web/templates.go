@@ -14,11 +14,12 @@ import (
 // At the moment it only contains one field, but we'll add more
 // to it as the build progresses.
 type templateData struct {
-	Snippet     *models.Snippet   //сниппет это связная совокупность данных таблицы
-	Snippets    []*models.Snippet //для того чтобы отображать последние n сниппетов
-	CurrentYear int
-	Form        any
-	Flash       string
+	Snippet         *models.Snippet   //сниппет это связная совокупность данных таблицы
+	Snippets        []*models.Snippet //для того чтобы отображать последние n сниппетов
+	CurrentYear     int
+	Form            any
+	Flash           string
+	IsAuthenticated bool // Add an IsAuthenticated field to the templateData struct.
 	//We’ll use this Form field to pass the validation errors and previously submitted data back to the template when we re-display the form.
 } //Form holds user form data
 
