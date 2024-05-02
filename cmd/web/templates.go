@@ -19,7 +19,9 @@ type templateData struct {
 	CurrentYear     int
 	Form            any
 	Flash           string
-	IsAuthenticated bool // Add an IsAuthenticated field to the templateData struct.
+	IsAuthenticated bool
+	CSRFToken       string
+	// Add an IsAuthenticated field to the templateData struct.
 	//We’ll use this Form field to pass the validation errors and previously submitted data back to the template when we re-display the form.
 } //Form holds user form data
 

@@ -9,6 +9,7 @@ import (
 	"time" // New import
 
 	"github.com/go-playground/form/v4" // New import
+	"github.com/justinas/nosurf"       // New import
 )
 
 // The serverError helper writes an error message and stack trace to the errorLog,
@@ -81,6 +82,7 @@ func (app *application) newTemplateData(r *http.Request) *templateData {
 		Flash:       app.sessionManager.PopString(r.Context(), "flash"),
 		// Add the authentication status to the template data.
 		IsAuthenticated: app.isAuthenticated(r),
+		CSRFToken:       nosurf.Token(r),
 	}
 }
 
@@ -118,5 +120,8 @@ func (app *application) decodePostForm(r *http.Request, dst any) error {
 // Return true if the current request is from an authenticated user, otherwise
 // return false.
 func (app *application) isAuthenticated(r *http.Request) bool {
+
+	//when the session ends, the authenticatedUserID will be removed and we will return from the handler
+	// meaning we have to log in again
 	return app.sessionManager.Exists(r.Context(), "authenticatedUserID")
 }

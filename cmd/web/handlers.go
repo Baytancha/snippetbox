@@ -171,7 +171,8 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Add the ID of the current user to the session, so that they are now
-	// 'logged in'.
+	// 'logged in'
+	/// we will check it again when we make another request and have to pass the middleware.
 	app.sessionManager.Put(r.Context(), "authenticatedUserID", id)
 
 	// Redirect the user to the create snippet page.
