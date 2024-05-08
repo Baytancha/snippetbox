@@ -3,10 +3,12 @@ package main
 import (
 	"fmt"           // New import
 	"html/template" // New import
+	"io/fs"         // New import
 	"path/filepath" // New import
 	"time"
 
 	"github.com/Baytancha/snip56/internal/models"
+	"github.com/Baytancha/snip56/ui"
 )
 
 // Define a templateData type to act as the holding structure for
@@ -29,7 +31,14 @@ type templateData struct {
 // representation of a time.Time object.
 // чтобы функция работала в шаблоне она должна возвращать одно значение
 func humanDate(t time.Time) string {
-	return t.Format("02 Jan 2006 at 15:04")
+
+	if t.IsZero() {
+		return ""
+	}
+
+	// Convert the time to UTC before formatting it.
+	return t.UTC().Format("02 Jan 2006 at 15:04")
+	//return t.Format("02 Jan 2006 at 15:04")
 }
 
 // Initialize a template.FuncMap object and store it in a global variable. This is
@@ -49,7 +58,16 @@ func newTemplateCache() (map[string]*template.Template, error) {
 	// match the pattern "./ui/html/pages/*.tmpl". This will essentially gives
 	// us a slice of all the filepaths for our application 'page' templates
 	// like: [ui/html/pages/home.tmpl ui/html/pages/view.tmpl]
-	pages, err := filepath.Glob("C:\\Users\\mk\\snippetbox\\ui\\html\\pages\\*.tmpl") //"./ui/html/pages/*.tmpl"
+	// pages, err := filepath.Glob("C:\\Users\\mk\\snippetbox\\ui\\html\\pages\\*.tmpl") //"./ui/html/pages/*.tmpl"
+	// if err != nil {
+	// 	return nil, err
+	// }
+
+	// Use fs.Glob() to get a slice of all filepaths in the ui.Files embedded
+	// filesystem which match the pattern 'html/pages/*.tmpl'. This essentially
+	// gives us a slice of all the 'page' templates for the application, just
+	// like before.
+	pages, err := fs.Glob(ui.Files, "html/pages/*.tmpl")
 	if err != nil {
 		return nil, err
 	}
@@ -61,24 +79,39 @@ func newTemplateCache() (map[string]*template.Template, error) {
 		name := filepath.Base(page)
 		fmt.Println(name)
 
+		// Create a slice containing the filepath patterns for the templates we
+		// want to parse.
+		patterns := []string{
+			"html/base.layout.tmpl",
+			"html/partials/*.tmpl",
+			page,
+		}
+
+		// Use ParseFS() instead of ParseFiles() to parse the template files
+		// from the ui.Files embedded filesystem.
+		ts, err := template.New(name).Funcs(functions).ParseFS(ui.Files, patterns...)
+		if err != nil {
+			return nil, err
+		}
+
 		// Parse the base template file into a template set.
-		ts, err := template.New(name).Funcs(functions).ParseFiles("C:\\Users\\mk\\snippetbox\\ui\\html\\base.layout.tmpl")
-		//ts, err := template.ParseFiles("C:\\Users\\mk\\snippetbox\\ui\\html\\base.layout.tmpl")
-		if err != nil {
-			return nil, err
-		}
+		// ts, err := template.New(name).Funcs(functions).ParseFiles("C:\\Users\\mk\\snippetbox\\ui\\html\\base.layout.tmpl")
+		// //ts, err := template.ParseFiles("C:\\Users\\mk\\snippetbox\\ui\\html\\base.layout.tmpl")
+		// if err != nil {
+		// 	return nil, err
+		// }
 
-		// Call ParseGlob() *on this template set* to add any partials.
-		ts, err = ts.ParseGlob("C:\\Users\\mk\\snippetbox\\ui\\html\\partials\\*.tmpl")
-		if err != nil {
-			return nil, err
-		}
+		// // Call ParseGlob() *on this template set* to add any partials.
+		// ts, err = ts.ParseGlob("C:\\Users\\mk\\snippetbox\\ui\\html\\partials\\*.tmpl")
+		// if err != nil {
+		// 	return nil, err
+		// }
 
-		// Call ParseFiles() *on this template set* to add the  page template.
-		ts, err = ts.ParseFiles(page)
-		if err != nil {
-			return nil, err
-		}
+		// // Call ParseFiles() *on this template set* to add the  page template.
+		// ts, err = ts.ParseFiles(page)
+		// if err != nil {
+		// 	return nil, err
+		// }
 
 		// Create a slice containing the filepaths for our base template, any
 		// partials and the page.

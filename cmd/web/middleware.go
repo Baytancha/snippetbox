@@ -76,6 +76,8 @@ func (app *application) requireAuthentication(next http.Handler) http.Handler {
 
 // Create a NoSurf middleware function which uses a customized CSRF cookie with
 // the Secure, Path and HttpOnly attributes set.
+// This will return a response which contains a CSRF cookie in the response headers and the CSRF token
+// for the signup page in the response body.
 func noSurf(next http.Handler) http.Handler {
 	csrfHandler := nosurf.New(next)
 	csrfHandler.SetBaseCookie(http.Cookie{

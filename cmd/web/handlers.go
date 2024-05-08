@@ -551,3 +551,7 @@ func (app *application) createSnippetPost(w http.ResponseWriter, r *http.Request
 
 	//w.Write([]byte("Create a new snippet..."))
 }
+
+func ping(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("OK"))
+}

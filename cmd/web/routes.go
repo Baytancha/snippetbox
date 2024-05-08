@@ -3,6 +3,7 @@ package main
 import (
 	"net/http"
 
+	"github.com/Baytancha/snip56/ui"
 	"github.com/julienschmidt/httprouter" // New import
 )
 
@@ -13,9 +14,17 @@ func (app *application) routes() http.Handler {
 	//mux := http.NewServeMux()
 	router := httprouter.New()
 	//путь по которому идем в HTML файле
-	fileServer := http.FileServer(http.Dir("C:\\Users\\mk\\snippetbox\\ui\\static"))
-	router.Handler(http.MethodGet, "/static/*filepath", http.StripPrefix("/static", fileServer))
+	//fileServer := http.FileServer(http.Dir("C:\\Users\\mk\\snippetbox\\ui\\static"))
+	// Take the ui.Files embedded filesystem and convert it to a http.FS type so
+	// that it satisfies the http.FileSystem interface. We then pass that to the
+	// http.FileServer() function to create the file server handler.
+	fileServer := http.FileServer(http.FS(ui.Files))
+	//fileserver это корневая папка которая содержит html и static, поэтому нам не надо удалять static из пути
+	router.Handler(http.MethodGet, "/static/*filepath", fileServer)
+	//router.Handler(http.MethodGet, "/static/*filepath", http.StripPrefix("/static", fileServer))
 
+	// Add a new GET /ping route.
+	router.HandlerFunc(http.MethodGet, "/ping", ping)
 	//гошный роутер не может обрабатывать http-method, он смотрит только на URL, поэтому
 	//обработка метода уже осуществляется на уровне хэндлеров
 	//mux.Handle("/static/", http.StripPrefix("/static", fileServer))

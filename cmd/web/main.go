@@ -33,10 +33,12 @@ import (
 // web application. For now we'll only include fields for the two custom loggers, but
 // we'll add more to it as the build progresses.
 type application struct {
-	errorLog       *log.Logger
-	infoLog        *log.Logger
-	snippets       *models.SnippetModel
-	users          *models.UserModel
+	errorLog *log.Logger
+	infoLog  *log.Logger
+	snippets models.SnippetModelInterface // Use our new interface type.
+	users    models.UserModelInterface    // Use our new interface type.
+	//snippets       *models.SnippetModel
+	//users          *models.UserModel
 	templateCache  map[string]*template.Template
 	formDecoder    *form.Decoder
 	sessionManager *scs.SessionManager

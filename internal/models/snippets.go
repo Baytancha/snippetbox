@@ -22,6 +22,12 @@ type SnippetModel struct {
 	DB *sql.DB
 }
 
+type SnippetModelInterface interface {
+	Insert(title string, content string, expires int) (int, error)
+	Get(id int) (*Snippet, error)
+	Latest() ([]*Snippet, error)
+}
+
 // This will return a specific snippet based on its id.
 func (m *SnippetModel) Get(id int) (*Snippet, error) {
 	// Write the SQL statement we want to execute. Again, I've split it over two
