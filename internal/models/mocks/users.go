@@ -31,3 +31,11 @@ func (m *UserModel) Exists(id int) (bool, error) {
 		return false, nil
 	}
 }
+
+func (m *UserModel) GetbyID(id int) (*models.User, error) {
+
+	user := &models.User{}
+
+	return user, nil
+
+}

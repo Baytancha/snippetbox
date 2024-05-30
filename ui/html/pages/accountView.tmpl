@@ -1,0 +1,27 @@
+{{template "base" .}} <!-- эта инструкция опциональна -->
+{{define "title"}}Account{{end}}
+{{define "body"}}
+<h2>Your Account </h2>
+{{with .Form}}
+     <table>
+        <tr>
+            <th>Name</th>
+             <th>{{.Name}}</th>
+        </tr>
+
+           <tr>
+            <th>Email</th>
+             <th>{{.Email}}</th>
+        </tr>
+
+         <tr>
+            <th>Joined</th>
+            <th>{{.Created}}</th>
+        </tr>
+    </table>
+    {{else}}
+<p>There's nothing to see here yet!</p>
+{{end}}
+
+
+{{end}}

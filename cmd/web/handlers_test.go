@@ -282,3 +282,63 @@ func TestUserSignup(t *testing.T) {
 	// the provided message to the test output.
 	t.Logf("CSRF token is: %q", validCSRFToken)
 }
+
+func TestCreateSnippet(t *testing.T) {
+	// Create a new instance of our application struct which uses the mocked
+	// dependencies.
+	app := newTestApplication(t)
+
+	// Establish a new test server for running end-to-end tests.
+	ts := newTestServer(t, app.routes())
+	defer ts.Close()
+
+	// Set up some table-driven tests to check the responses sent by our
+	// application for different URLs.
+	tests := []struct {
+		name         string
+		urlPath      string
+		userEmail    string
+		userPassword string
+		wantCode     int
+		wantBody     string
+	}{
+		{
+			name:     "Non-authenticated",
+			urlPath:  "/snippet/create",
+			wantCode: http.StatusSeeOther,
+		},
+		{
+			name:         "Authenticated",
+			urlPath:      "/snippet/create",
+			userEmail:    "tommytinkrem@gmail.com",
+			userPassword: "heckfy10",
+			wantCode:     http.StatusOK,
+			wantBody:     "<form action='/snippet/create' method='POST'>",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+
+			switch tt.name {
+			case "Authenticated":
+				_, _, body := ts.get(t, "/user/login")
+				validCSRFToken := extractCSRFToken(t, body)
+				form := url.Values{}
+				form.Add("email", tt.userEmail)
+				form.Add("password", tt.userPassword)
+				form.Add("csrf_token", validCSRFToken)
+				_, _, _ = ts.postForm(t, tt.urlPath, form)
+
+				code, _, body := ts.get(t, tt.urlPath) //here we access the route
+				assert.Equal(t, code, tt.wantCode)
+				assert.StringContains(t, body, tt.wantBody)
+			case "Non-authenticated":
+				code, headers, _ := ts.get(t, tt.urlPath) //here we access the route
+				assert.Equal(t, code, tt.wantCode)
+				assert.Equal(t, headers.Get("Location"), "/user/login")
+			}
+
+		})
+	}
+}
