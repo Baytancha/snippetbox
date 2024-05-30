@@ -19,6 +19,11 @@ func (app *application) serverError(w http.ResponseWriter, err error) {
 	//app.errorLog.Println(trace)
 	app.errorLog.Output(2, trace) //to show where the mistake happens on the stack
 	//this sends error message to the user
+	if app.debug {
+
+		http.Error(w, trace, http.StatusInternalServerError)
+		return
+	}
 	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 }
 
@@ -119,9 +124,17 @@ func (app *application) decodePostForm(r *http.Request, dst any) error {
 
 // Return true if the current request is from an authenticated user, otherwise
 // return false.
+// используем контекст чтобы не делать последующее обращение к базе данных по сессии  в рамках
+// одной цепочки запросов
 func (app *application) isAuthenticated(r *http.Request) bool {
+	isAuthenticated, ok := r.Context().Value(isAuthenticatedContextKey).(bool)
+	if !ok {
+		return false
+	}
+
+	return isAuthenticated
 
 	//when the session ends, the authenticatedUserID will be removed and we will return from the handler
 	// meaning we have to log in again
-	return app.sessionManager.Exists(r.Context(), "authenticatedUserID")
+	//return app.sessionManager.Exists(r.Context(), "authenticatedUserID")
 }

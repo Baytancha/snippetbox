@@ -305,6 +305,118 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	//w.Write([]byte("Hello from Snippetbox"))
 }
 
+func (app *application) about(w http.ResponseWriter, r *http.Request) {
+
+	// if r.URL.Path != "/" { //restricting the wildcard pattern
+	// 	app.notFound(w) // Use the notFound() helper
+	// 	//http.NotFound(w, r)
+	// 	return
+	// }
+
+	//panic("oops! something went wrong") // Deliberate panic
+
+	// Use the new render helper.
+
+	// data := &templateData{
+	// 	Snippets: snippets,
+	// }
+
+	// Call the newTemplateData() helper to get a templateData struct containing
+	// the 'default' data (which for now is just the current year), and add the
+	// snippets slice to it.
+	data := app.newTemplateData(r)
+
+	app.render(w, http.StatusOK, "about.tmpl", data)
+
+	//w.Write([]byte("Hello from Snippetbox"))
+}
+
+func (app *application) accountView(w http.ResponseWriter, r *http.Request) {
+
+	id := app.sessionManager.GetInt(r.Context(), "authenticatedUserID")
+
+	User, err := app.users.GetbyID(id)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.notFound(w)
+		} else {
+			app.serverError(w, err)
+		}
+		return
+	}
+
+	data := app.newTemplateData(r)
+	data.Form = User
+	app.render(w, http.StatusOK, "accountView.tmpl", data)
+
+	// When httprouter is parsing a request, the values of any named parameters
+	// will be stored in the request context. We'll talk about request context
+	// in detail later in the book, but for now it's enough to know that you can
+	// use the ParamsFromContext() function to retrieve a slice containing these
+	// parameter names and values like so:
+
+	// We can then use the ByName() method to get the value of the "id" named
+	// parameter from the slice and validate it as normal.
+
+	// id, err := strconv.Atoi(r.URL.Query().Get("id"))
+	// if err != nil || id < 1 {
+	// 	app.notFound(w) // Use the notFound() helper.
+	// 	//http.NotFound(w, r)
+	// 	return
+	// }
+
+	// Use the SnippetModel object's Get method to retrieve the data for a
+	// specific record based on its ID. If no matching record is found,
+	// return a 404 Not Found response.
+
+}
+
+// Initialize a slice containing the paths to the view.tmpl file,
+// plus the base layout and navigation partial that we made earlier.
+// files := []string{
+// 	//"C:\\Users\\mk\\snippetbox\\ui\\html\\view.templ.tmpl", //template instantiation file must be first
+// 	//"C:\\Users\\mk\\snippetbox\\ui\\html\\home.page.tmpl",
+// 	//"C:\\Users\\mk\\snippetbox\\ui\\html\\view.tmpl",
+// 	"C:\\Users\\mk\\snippetbox\\ui\\html\\base.layout.tmpl",
+// 	"C:\\Users\\mk\\snippetbox\\ui\\html\\footer.partial.tmpl",
+// 	"C:\\Users\\mk\\snippetbox\\ui\\html\\view.tmpl", //works with view.templ too
+// 	"C:\\Users\\mk\\snippetbox\\ui\\html\\nav.tmpl",
+// }
+
+// Parse the template files...
+// ts, err := template.ParseFiles(files...)
+// if err != nil {
+// 	app.serverError(w, err)
+// 	return
+// }
+
+// Create an instance of a templateData struct holding the snippet data.
+// data := &templateData{
+// 	Snippet: snippet,
+// }
+
+// Use the PopString() method to retrieve the value for the "flash" key.
+// PopString() also deletes the key and value from the session data, so it
+// acts like a one-time fetch. If there is no matching key in the session
+// data this will return the empty string.
+//flash := app.sessionManager.PopString(r.Context(), "flash")
+
+// And do the same thing again here...
+
+// Pass the flash message to the template.
+
+//при использовании ExecuteTemplate не нужно собирать вложенные шаблоны и соблюдать порядок вызова шаблонов
+
+// err = ts.ExecuteTemplate(w, "base", data)
+// if err != nil {
+// 	app.serverError(w, err)
+// }
+
+// Write the snippet data as a plain-text HTTP response body.
+//fmt.Fprintf(w, "%+v", snippet)
+
+//fmt.Fprintf(w, "Display a specific snippet with ID %d...", id)
+
 func (app *application) showSnippet(w http.ResponseWriter, r *http.Request) {
 
 	// When httprouter is parsing a request, the values of any named parameters

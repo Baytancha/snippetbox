@@ -36,7 +36,9 @@ func (app *application) routes() http.Handler {
 
 	// And then create the routes using the appropriate methods, patterns and
 	// handlers.
+
 	router.Handler(http.MethodGet, "/", app.sessionManager.LoadAndSave(noSurf(http.HandlerFunc(app.home))))
+	router.Handler(http.MethodGet, "/about", app.sessionManager.LoadAndSave(noSurf(http.HandlerFunc(app.about))))
 	router.Handler(http.MethodGet, "/snippet/view/:id", app.sessionManager.LoadAndSave(noSurf(app.authenticate(http.HandlerFunc(app.showSnippet)))))
 	router.Handler(http.MethodGet, "/user/signup", app.sessionManager.LoadAndSave(noSurf(app.authenticate(http.HandlerFunc(app.userSignup)))))
 	router.Handler(http.MethodPost, "/user/signup", app.sessionManager.LoadAndSave(noSurf(app.authenticate(http.HandlerFunc(app.userSignupPost)))))
@@ -45,7 +47,7 @@ func (app *application) routes() http.Handler {
 
 	//protected := dynamic.Append(app.requireAuthentication)
 	//router.Handler(http.MethodGet, "/snippet/create", protected.ThenFunc(app.snippetCreate))
-
+	router.Handler(http.MethodGet, "/account/view", app.sessionManager.LoadAndSave(noSurf(app.authenticate(app.requireAuthentication(http.HandlerFunc(app.accountView))))))
 	router.Handler(http.MethodGet, "/snippet/create", app.sessionManager.LoadAndSave(noSurf(app.authenticate(app.requireAuthentication(http.HandlerFunc(app.createSnippet))))))
 	router.Handler(http.MethodPost, "/snippet/create", app.sessionManager.LoadAndSave(noSurf(app.authenticate(app.requireAuthentication(http.HandlerFunc(app.createSnippetPost))))))
 	router.Handler(http.MethodPost, "/user/logout", app.sessionManager.LoadAndSave(noSurf(app.authenticate(app.requireAuthentication(http.HandlerFunc(app.userLogoutPost))))))

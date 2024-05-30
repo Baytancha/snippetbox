@@ -33,6 +33,7 @@ import (
 // web application. For now we'll only include fields for the two custom loggers, but
 // we'll add more to it as the build progresses.
 type application struct {
+	debug    bool
 	errorLog *log.Logger
 	infoLog  *log.Logger
 	snippets models.SnippetModelInterface // Use our new interface type.
@@ -69,6 +70,7 @@ func main() {
 	// command-line flags for an application and their accompanying help text. Give it a try:
 
 	// Define a new command-line flag for the MySQL DSN string.
+	dbg := flag.Bool("debug", false, "Enable debug mode")
 	dsn := flag.String("dsn", "web:pass@/snippetbox?parseTime=true", "MySQL data source name")
 
 	addr := flag.String("addr", "127.0.0.1:4000", "HTTP network address")
@@ -126,6 +128,7 @@ func main() {
 	// Initialize a new instance of our application struct, containing the
 	// dependencies.
 	app := &application{
+		debug:          *dbg,
 		errorLog:       errorLog, //not global vars but accessible via method interfsacing
 		infoLog:        infoLog,
 		snippets:       &models.SnippetModel{DB: db},
