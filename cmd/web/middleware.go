@@ -60,6 +60,7 @@ func (app *application) requireAuthentication(next http.Handler) http.Handler {
 		// return from the middleware chain so that no subsequent handlers in
 		// the chain are executed.
 		if !app.isAuthenticated(r) {
+
 			http.Redirect(w, r, "/user/login", http.StatusSeeOther)
 			return
 		}
@@ -120,4 +121,15 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 		// Call the next handler in the chain.
 		next.ServeHTTP(w, r)
 	})
+}
+
+func (app *application) loginRedirect(next http.Handler) http.Handler {
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("url", r.URL.String())
+		app.sessionManager.Put(r.Context(), "redirect", r.URL.String())
+
+		next.ServeHTTP(w, r)
+	})
+
 }

@@ -176,7 +176,9 @@ func (app *application) userLoginPost(w http.ResponseWriter, r *http.Request) {
 	app.sessionManager.Put(r.Context(), "authenticatedUserID", id)
 
 	// Redirect the user to the create snippet page.
-	http.Redirect(w, r, "/snippet/create", http.StatusSeeOther)
+	//fmt.Println(app.sessionManager.PopString(r.Context(), "redirect"))
+	http.Redirect(w, r, app.sessionManager.PopString(r.Context(), "redirect"), http.StatusSeeOther)
+	//http.Redirect(w, r, "/snippet/create", http.StatusSeeOther)
 	//fmt.Fprintln(w, "Authenticate and login the user...")
 }
 
@@ -339,6 +341,8 @@ func (app *application) accountView(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
+			//http.Redirect(w, r, "/user/login", http.StatusSeeOther)
+
 		} else {
 			app.serverError(w, err)
 		}
